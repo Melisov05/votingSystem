@@ -1,5 +1,3 @@
-<!-- candidates_page.ftl -->
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -16,8 +14,14 @@
             <#list candidates as candidate>
                 <div class="card">
                     <form action="/vote" method="post" class="flex flex-col align-center" href="#">
-                        <img src="images/${candidate.photo}">
-                        <p>${candidate.name}</p>
+                        <img src="/images/${candidate.photo}">
+                        <p>${candidate.name} -
+                            <#if totalVotes != 0>
+                                ${((candidate.amountOfVotes / totalVotes) * 100)?string("0.##")} % of all votes
+                            <#else>
+                                0 % of all votes
+                            </#if>
+                        </p>
                         <input name="candidateIndex" type="hidden" value="${candidate?index}">
                         <button type="submit" class="vote flex align-center">Vote</button>
                     </form>

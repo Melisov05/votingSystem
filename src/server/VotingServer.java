@@ -26,6 +26,19 @@ public class VotingServer extends BasicServer{
         super(host, port);
         candidateList = Util.readCandidatesFromJson("data/candidates.json");
         registerGet("/", this::mainPageHandler);
+        registerGet("/votes", this::votesPercentageHandler);
+    }
+
+    private void votesPercentageHandler(HttpExchange exchange) {
+        candidateList = Util.readCandidatesFromJson("data/candidates.json");
+        Map<String, Object> dataModel = new HashMap<>();
+        dataModel.put("candidates", candidateList);
+        dataModel.put("totalVotes", calculateTotalVotes());
+        renderTemplate(exchange, "data/votes.ftlh", dataModel);
+    }
+
+    private int calculateTotalVotes() {
+        return candidateList.stream().mapToInt(Candidate::getAmountOfVotes).sum();
     }
 
     private void mainPageHandler(HttpExchange exchange) {
