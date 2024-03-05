@@ -11,7 +11,7 @@
     <div class="container flex flex-col align-center">
         <h1>Vote for us</h1>
         <main class="flex flex-wrap align-evenly">
-            <#list candidates as candidate>
+            <#list candidates?sort_by("amountOfVotes")?reverse as candidate>
                 <div class="card">
                     <form action="/vote" method="post" class="flex flex-col align-center" href="#">
                         <img src="/images/${candidate.photo}">
@@ -22,8 +22,6 @@
                                 0 % of all votes
                             </#if>
                         </p>
-                        <input name="candidateIndex" type="hidden" value="${candidate?index}">
-                        <button type="submit" class="vote flex align-center">Vote</button>
                     </form>
                 </div>
             </#list>

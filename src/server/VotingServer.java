@@ -11,6 +11,7 @@ import util.Util;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +83,7 @@ public class VotingServer extends BasicServer{
 
         Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("selectedCandidate", selectedCandidate);
+        dataModel.put("totalVotes", calculateTotalVotes());
         renderTemplate(exchange, "data/thankyou.ftlh", dataModel);
     }
 
@@ -105,6 +107,7 @@ public class VotingServer extends BasicServer{
 
     private void votesPercentageHandler(HttpExchange exchange) {
         Map<String, Object> dataModel = new HashMap<>();
+
         dataModel.put("candidates", candidateList);
         dataModel.put("totalVotes", calculateTotalVotes());
         renderTemplate(exchange, "data/votes.ftlh", dataModel);
