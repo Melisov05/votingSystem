@@ -30,7 +30,7 @@
         </main>
 
         <p>-------------------------------------------------------</p>
-        <a class="back flex align-center" href="/votes">Show total votes</a>
+        <a class="back flex align-center" href="/">Back to Main</a>
     </div>
 </body>
 

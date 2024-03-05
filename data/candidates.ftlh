@@ -15,7 +15,7 @@
         <main class="flex flex-wrap align-evenly">
             <#list candidates as candidate>
                 <div class="card">
-                    <form action="/vote" method="post" class="flex flex-col align-center" href="#">
+                    <form action="/" method="post" class="flex flex-col align-center" href="#">
                         <img src="images/${candidate.photo}">
                         <p>${candidate.name}</p>
                         <input name="candidateIndex" type="hidden" value="${candidate?index}">

@@ -2,19 +2,20 @@ package server;
 
 import com.sun.net.httpserver.HttpExchange;
 import entity.Candidate;
+import entity.Session;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import freemarker.template.TemplateExceptionHandler;
 import util.Util;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static entity.Session.createSession;
 
 public class VotingServer extends BasicServer{
 
@@ -27,10 +28,82 @@ public class VotingServer extends BasicServer{
         candidateList = Util.readCandidatesFromJson("data/candidates.json");
         registerGet("/", this::mainPageHandler);
         registerGet("/votes", this::votesPercentageHandler);
+        registerPost("/", this::voteHandler);
+        registerGet("/thankyou", this::thankYouHandler);
+    }
+
+    private void voteHandler(HttpExchange exchange) {
+        if ("POST".equals(exchange.getRequestMethod())){
+            try{
+                Map<String, String> formData = Util.getFormData(exchange);
+                String candidateIndexStr = formData.get("candidateIndex");
+
+                if (candidateIndexStr != null) {
+                    try {
+                        int candidateIndex = Integer.parseInt(candidateIndexStr);
+
+                        Candidate selectedCandidate = candidateList.get(candidateIndex);
+                        selectedCandidate.incrementVotes();
+
+                        String sessionId = createSession(selectedCandidate);
+
+                        exchange.getResponseHeaders().set("Location", "/thankyou");
+                        exchange.getResponseHeaders().add("Set-Cookie", "sessionId=" + sessionId);
+                        exchange.sendResponseHeaders(302, -1);
+                    } catch (NumberFormatException | IndexOutOfBoundsException e) {
+                        e.printStackTrace();
+                        sendErrorResponse(exchange, 400, "Invalid candidate index");
+                    }
+                } else {
+                    sendErrorResponse(exchange, 400, "Missing candidate index");
+                }
+            } catch (IOException e){
+                e.printStackTrace();
+                sendErrorResponse(exchange, 500, "Internal Server Error");
+            }
+        }
+    }
+
+    private void sendErrorResponse(HttpExchange exchange, int statusCode, String errorMessage) {
+        try {
+            exchange.sendResponseHeaders(statusCode, errorMessage.length());
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(errorMessage.getBytes(StandardCharsets.UTF_8));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void thankYouHandler(HttpExchange exchange) {
+        String sessionId = extractSessionIdFromRequest(exchange);
+
+        Candidate selectedCandidate = Session.getCandidateForSession(sessionId);
+
+        Map<String, Object> dataModel = new HashMap<>();
+        dataModel.put("selectedCandidate", selectedCandidate);
+        renderTemplate(exchange, "data/thankyou.ftlh", dataModel);
+    }
+
+    private String extractSessionIdFromRequest(HttpExchange exchange) {
+        List<String> cookies = exchange.getRequestHeaders().get("Cookie");
+
+        if (cookies != null) {
+            for (String cookie : cookies) {
+                String[] parts = cookie.split(";");
+                for (String part : parts) {
+                    String[] pair = part.trim().split("=");
+                    if (pair.length == 2 && pair[0].equals("sessionId")) {
+                        return pair[1];
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private void votesPercentageHandler(HttpExchange exchange) {
-        candidateList = Util.readCandidatesFromJson("data/candidates.json");
         Map<String, Object> dataModel = new HashMap<>();
         dataModel.put("candidates", candidateList);
         dataModel.put("totalVotes", calculateTotalVotes());
